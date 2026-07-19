@@ -16,6 +16,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Force Kernel version to 6.11.9
+        run: |
+          echo "==== Modifying sm8250.conf to use Kernel 6.11.9 ===="
+          sed -i 's/KERNEL_MAJOR_MINOR="6.11"/KERNEL_MAJOR_MINOR="6.11"/g' config/sources/families/sm8250.conf
+          sed -i "s/KERNELBRANCH='branch:linux-6.11.y'/KERNELBRANCH='tag:v6.11.9'/g" config/sources/families/sm8250.conf
+          cat config/sources/families/sm8250.conf
+
       - name: Inject mkbootimg fix into Docker container
         run: |
           mkdir -p userpatches
