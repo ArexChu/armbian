@@ -44,26 +44,45 @@ jobs:
             BOARD=oneplus-kebab \
             BRANCH=current \
             RELEASE=noble \
-            BUILD_DESKTOP=yes \
-            DESKTOP_ENVIRONMENT=gnome \
-            DESKTOP_ENVIRONMENT_CONFIG_NAME=minimal \
-            DESKTOP_APPGROUPS_SELECTED=editors \
+            BUILD_MINIMAL=yes \
+            BUILD_DESKTOP=no \
             KERNEL_CONFIGURE=no \
-            INSTALL_HEADERS=yes \
-            USE_REPO=no \
-            REBUILD_KERNEL=yes \
-            COMPRESS_OUTPUTIMAGE=xz
+            INSTALL_HEADERS=yes
           
           echo "=== Build Output ==="
-          ls -lh output || true
-          ls -lh output/images || true
-          ls -lh output/debs || true
+          ls -lh output
+          ls -lh output/images
+          ls -lh output/debs
+
+      - name: Check and split image if larger than 2G
+        run: |
+          mkdir -p release
+          IMG=$(ls output/images/*.img | head -n1)
+          echo "Image: $IMG"
+          SIZE=$(stat -c%s "$IMG")
+          LIMIT=$((2 * 1024 * 1024 * 1024))
+          echo "Size: $SIZE bytes"
+          echo "Limit: $LIMIT bytes"
+          if [ "$SIZE" -gt "$LIMIT" ]; then
+            echo "Image larger than 2G, splitting..."
+            split \
+              -b 1900M \
+              -d \
+              --suffix-length=3 \
+              "$IMG" \
+              "release/$(basename "$IMG").part."
+            rm -f "$IMG"
+          else
+            echo "Image smaller than 2G, no split"
+            cp "$IMG" release/
+          fi
+          ls -lh release
 
       - name: Upload binary to Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            output/images/*.img.xz
+            release/*.img*
             output/debs/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
