@@ -1,0 +1,59 @@
+name: Build Armbian
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build Armbian Image
+    runs-on: ubuntu-24.04-arm
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Inject mkbootimg fix into Docker container
+        run: |
+          mkdir -p userpatches
+          cat << 'EOF' > userpatches/lib.config
+          echo "==== Applying mkbootimg fix inside Docker ===="
+          if [ ! -d /usr/bin/gki ]; then
+            git clone https://android.googlesource.com/platform/system/tools/mkbootimg /tmp/mkbootimg
+            cp /tmp/mkbootimg/mkbootimg.py /usr/bin/mkbootimg
+            chmod +x /usr/bin/mkbootimg
+            cp -r /tmp/mkbootimg/gki /usr/bin/
+            echo "==== Fix applied! ===="
+          fi
+          EOF
+          chmod +x userpatches/lib.config
+
+      - name: Run Armbian Build Script
+        run: |
+          ./compile.sh \
+            BOARD=oneplus-kebab \
+            BRANCH=current \
+            RELEASE=noble \
+            KERNEL_CONFIGURE=no \
+            BUILD_DESKTOP=no \
+	    BUILD_MINIMAL=no \
+            COMPRESS_OUTPUTIMAGE=xz \
+            INSTALL_HEADERS=yes \
+            EXPERT=yes
+          
+          echo "=== Build Output ==="
+          ls -lh output || true
+          ls -lh output/images || true
+          ls -lh output/debs || true
+
+      - name: Upload binary to Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            output/images/*.img.xz
+            output/debs/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
