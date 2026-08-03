@@ -18,25 +18,30 @@ jobs:
 
       - name: Force Kernel version to 6.18
         run: |
-          echo "==== Modifying sm8250.conf to use Kernel 6.18 ===="
-          sed -i 's/KERNEL_MAJOR_MINOR="6.18"/KERNEL_MAJOR_MINOR="6.18"/g' config/sources/families/sm8250.conf
-          sed -i "s/KERNELBRANCH='branch:linux-6.18.y'/KERNELBRANCH='tag:v6.18.39'/g" config/sources/families/sm8250.conf
+          sed -i 's/KERNEL_MAJOR_MINOR=".*"/KERNEL_MAJOR_MINOR="6.18"/g' config/sources/families/sm8250.conf
+          sed -i "s/KERNELBRANCH='.*'/KERNELBRANCH='tag:v6.18.39'/g" config/sources/families/sm8250.conf
           cat config/sources/families/sm8250.conf
 
       - name: Inject mkbootimg fix into Docker container
         run: |
           mkdir -p userpatches
           cat << 'EOF' > userpatches/lib.config
-          echo "==== Applying mkbootimg fix inside Docker ===="
           if [ ! -d /usr/bin/gki ]; then
             git clone https://android.googlesource.com/platform/system/tools/mkbootimg /tmp/mkbootimg
             cp /tmp/mkbootimg/mkbootimg.py /usr/bin/mkbootimg
             chmod +x /usr/bin/mkbootimg
             cp -r /tmp/mkbootimg/gki /usr/bin/
-            echo "==== Fix applied! ===="
           fi
           EOF
           chmod +x userpatches/lib.config
+
+      - name: Patch image-output-abl.sh to fix kernel globbing
+        run: |
+          if [ -f extensions/image-output-abl.sh ]; then
+            sed -i 's@"${new_rootfs_image_mount_dir}"/boot/vmlinuz-\*-\*@$(ls "${new_rootfs_image_mount_dir}"/boot/vmlinuz-* "${new_rootfs_image_mount_dir}"/boot/Image* 2>/dev/null | head -n 1)@g' extensions/image-output-abl.sh
+            sed -i 's@"${new_rootfs_image_mount_dir}"/boot/initrd.img-\*-\*@$(ls "${new_rootfs_image_mount_dir}"/boot/initrd.img-* 2>/dev/null | head -n 1)@g' extensions/image-output-abl.sh
+            cat extensions/image-output-abl.sh
+          fi
 
       - name: Run Armbian Build Script
         run: |
