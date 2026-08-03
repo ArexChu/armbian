@@ -27,14 +27,22 @@ jobs:
         run: |
           mkdir -p userpatches
           cat << 'EOF' > userpatches/lib.config
-          echo "==== Applying mkbootimg fix inside Docker ===="
           if [ ! -d /usr/bin/gki ]; then
             git clone https://android.googlesource.com/platform/system/tools/mkbootimg /tmp/mkbootimg
             cp /tmp/mkbootimg/mkbootimg.py /usr/bin/mkbootimg
             chmod +x /usr/bin/mkbootimg
             cp -r /tmp/mkbootimg/gki /usr/bin/
-            echo "==== Fix applied! ===="
           fi
+          post_build_image_rootfs_cleanup() {
+              display_alert "Fixing kernel filename for ABL" "sm8250" "info"
+              local boot_dir="$SDCARD/boot"
+              local real_version="6.18.39-current-sm8250"
+              if [ -f "${boot_dir}/Image" ]; then
+                  display_alert "Creating vmlinuz link for ${real_version}" "" "info"
+                  ln -f "${boot_dir}/Image" "${boot_dir}/vmlinuz-${real_version}"
+              fi
+              return 0
+          }
           EOF
           chmod +x userpatches/lib.config
 
