@@ -19,7 +19,7 @@ jobs:
       - name: Force Kernel version to 6.18
         run: |
           sed -i 's/KERNEL_MAJOR_MINOR=".*"/KERNEL_MAJOR_MINOR="6.18"/g' config/sources/families/sm8250.conf
-          sed -i "s/KERNELBRANCH='.*'/KERNELBRANCH='tag:v6.18.39'/g" config/sources/families/sm8250.conf
+          sed -i "s/KERNELBRANCH='.*'/KERNELBRANCH='branch:linux-6.18.y'/g" config/sources/families/sm8250.conf
           cat config/sources/families/sm8250.conf
 
       - name: Inject mkbootimg fix into Docker container
