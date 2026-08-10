@@ -44,12 +44,9 @@ jobs:
             BOARD=oneplus-kebab \
             BRANCH=current \
             RELEASE=noble \
-            BUILD_DESKTOP=yes \
-            DESKTOP_ENVIRONMENT=xfce \
-            DESKTOP_ENVIRONMENT_CONFIG_NAME=minimal \
-            DESKTOP_APPGROUPS_SELECTED=editors \
-            KERNEL_CONFIGURE=no \
-            INSTALL_HEADERS=yes
+            BUILD_DESKTOP=no \
+            BUILD_MINIMAL=no \
+            KERNEL_CONFIGURE=no
           
           echo "=== Build Output ==="
           ls -lh output
