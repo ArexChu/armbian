@@ -31,6 +31,20 @@ jobs:
           EOF
           chmod +x userpatches/lib.config
 
+      - name: Fix firmware paths in kernel patch
+        run: |
+          PATCH_FILE="patch/kernel/archive/sm8250-6.19/0011-arm64-dts-qcom-sm8250-oneplus-kebab-Add-device-tree-.patch"
+          if [ -f "$PATCH_FILE" ]; then
+            echo "Modifying DTS firmware paths to match Armbian config..."
+            sed -i 's|"postmarketos/adsp.mbn"|"qcom/sm8250/OnePlus/adsp.mbn"|g' "$PATCH_FILE"
+            sed -i 's|"postmarketos/cdsp.mbn"|"qcom/sm8250/OnePlus/cdsp.mbn"|g' "$PATCH_FILE"
+            sed -i 's|"postmarketos/slpi.mbn"|"qcom/sm8250/OnePlus/slpi.mbn"|g' "$PATCH_FILE"
+            sed -i 's|"postmarketos/venus.mbn"|"qcom/sm8250/OnePlus/kebab/venus.mbn"|g' "$PATCH_FILE"
+            echo "Patch file modified successfully."
+          else
+            echo "Error: $PATCH_FILE not found! Check your path."
+          fi
+
       - name: Run Armbian Build Script
         run: |
           ./compile.sh \
